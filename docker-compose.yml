@@ -3,7 +3,7 @@ services:
   api:
     image: openpodcast/api:main
     ports:
-      - 8080:8080
+      - 4000:4000
     environment:
       # If you change this, you need to change it in the db service too
       - DB_CONNECTION_STRING=mysql://openpodcast:password@db:3306/openpodcast
