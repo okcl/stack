@@ -3,67 +3,67 @@ services:
   api:
     image: openpodcast/api:main
     ports:
-      - 4000:4000
+      - "4000:4000"
     environment:
-      # If you change this, you need to change it in the db service too
-      - DB_CONNECTION_STRING=mysql://openpodcast:password@db:3306/openpodcast
-      - ACCOUNTS={"dummy-cn389ncoiwuencr":0}
+      DB_CONNECTION_STRING: mysql://openpodcast:password@db:3306/openpodcast
+      ACCOUNTS: '{"dummy-cn389ncoiwuencr":0}'
     depends_on:
       - db
+
   forwarder:
     image: openpodcast/forwarder:master
-    platform: linux/amd64
     ports:
-      - 9000:9000
-    env_file:
-      - .env.forwarder
-    profiles:
-      - all
+      - "9000:9000"
+    environment:
+      FORWARDER_API_KEY: ${FORWARDER_API_KEY}
+      FORWARDER_BASE_URL: ${FORWARDER_BASE_URL}
     depends_on:
       - api
+
   spotify-connector:
     image: openpodcast/spotify-connector:main
-    env_file:
-      - .env.spotify
+    environment:
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET}
     depends_on:
       - api
+
   apple-connector:
     image: openpodcast/apple-connector:main
-    env_file:
-      - .env.apple
+    environment:
+      APPLE_EMAIL: ${APPLE_EMAIL}
+      APPLE_PASSWORD: ${APPLE_PASSWORD}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID}
+      APP_SPECIFIC_PASSWORD: ${APP_SPECIFIC_PASSWORD}
     depends_on:
       - api
+
   apple-automation:
     image: openpodcast/apple-automation:main
-    env_file:
-      - .env.apple-automation
+    environment:
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID}
+      APPLE_KEY_ID: ${APPLE_KEY_ID}
+      APPLE_KEY: ${APPLE_KEY}
+
   db:
     image: mysql:8.0
-    # Can be removed as soon as ARM images for MySQL 8.0 are available
-    platform: linux/amd64
-    # Always restart the container if it stops. If it is manually stopped, it is
-    # restarted only when Docker daemon restarts or the container itself is
-    # manually restarted.
     restart: always
     environment:
       MYSQL_DATABASE: openpodcast
-      # Change this to a strong password for prod
       MYSQL_ROOT_PASSWORD: root
-      # So you don't have to use root, but you can if you like
       MYSQL_USER: openpodcast
       MYSQL_PASSWORD: password
     volumes:
-      - ./db_schema/metabase_user.sql:/docker-entrypoint-initdb.d/metabase_user.sql
-      - ./db_schema/metabase_content.sql:/docker-entrypoint-initdb.d/x_metabase_content.sql
       - db_data:/var/lib/mysql
+
   analytics:
     image: metabase/metabase:v0.44.6
     ports:
-      - 3000:3000
+      - "3000:3000"
+    environment:
+      MB_DB_CONNECTION_URI: mysql://db:3306/metabase?user=metabase&password=metabaseSuperSecret&allowPublicKeyRetrieval=true
     volumes:
       - metabase_data:/metabase-data
-    environment:
-      - MB_DB_CONNECTION_URI=mysql://db:3306/metabase?user=metabase&password=metabaseSuperSecret&allowPublicKeyRetrieval=true
     depends_on:
       - db
 
